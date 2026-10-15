@@ -1,33 +1,95 @@
-name: Python application
-on: [push, pull_request]
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+from flask import Flask, jsonify
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
+app = Flask(__name__)
 
-      - name: Show repo contents (debug)
-        run: |
-          pwd
-          echo "Top-level files:"
-          ls -la
-          echo "tests/ folder listing (if any):"
-          ls -la tests || true
+# Sample student data
+STUDENTS = {
+    "101": {
+        "name": "Aarav Shah",
+        "python": 78,
+        "mathematics": 82,
+        "devops": 91,
+    },
+    "102": {
+        "name": "Diya Patil",
+        "python": 67,
+        "mathematics": 73,
+        "devops": 69,
+    },
+    "103": {
+        "name": "Kabir Joshi",
+        "python": 28,
+        "mathematics": 45,
+        "devops": 32,
+    },
+}
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          pip install pytest
+PASS_MARK = 35
 
-      - name: Run pytest (collect-only first to debug)
-        run: |
-          pytest --maxfail=1 -q
-          # or to debug discovery:
-          # pytest -q --collect-only -vv
+
+def calculate_result(student):
+    """Calculate total, percentage, and pass/fail status."""
+    subjects = ("python", "mathematics", "devops")
+    marks = [student[subject] for subject in subjects]
+
+    total = sum(marks)
+    percentage = round(total / len(marks), 2)
+
+    status = (
+        "PASS"
+        if all(mark >= PASS_MARK for mark in marks)
+        else "FAIL"
+    )
+
+    return {
+        "total": total,
+        "percentage": percentage,
+        "status": status,
+    }
+
+
+@app.route("/", methods=["GET"])
+def home():
+    return jsonify({
+        "application": "Student Result Management System",
+        "message": "Use /results/<roll_number> to view a student's result.",
+        "sample_roll_numbers": list(STUDENTS.keys()),
+    }), 200
+
+
+@app.route("/health", methods=["GET"])
+def health():
+    return jsonify({"status": "healthy"}), 200
+
+
+@app.route("/results/<roll_number>", methods=["GET"])
+def get_result(roll_number):
+    student = STUDENTS.get(roll_number)
+
+    if student is None:
+        return jsonify({
+            "error": "Student roll number not found"
+        }), 404
+
+    result = calculate_result(student)
+
+    response = {
+        "roll_number": roll_number,
+        "name": student["name"],
+        "marks": {
+            "python": student["python"],
+            "mathematics": student["mathematics"],
+            "devops": student["devops"],
+        },
+        **result,
+    }
+
+    return jsonify(response), 200
+
+
+if __name__ == "__main__":
+    app.run(
+        host="127.0.0.1",
+        port=5000,
+        debug=False,
+    )
