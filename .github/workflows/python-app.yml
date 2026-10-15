@@ -2,22 +2,44 @@ from flask import Flask, jsonify
 
 app = Flask(__name__)
 
-# Sample data for practical examination purposes.
+# Sample student data
 STUDENTS = {
-    "101": {"name": "Aarav Shah", "python": 78, "mathematics": 82, "devops": 91},
-    "102": {"name": "Diya Patil", "python": 67, "mathematics": 73, "devops": 69},
-    "103": {"name": "Kabir Joshi", "python": 28, "mathematics": 45, "devops": 32},
+    "101": {
+        "name": "Aarav Shah",
+        "python": 78,
+        "mathematics": 82,
+        "devops": 91,
+    },
+    "102": {
+        "name": "Diya Patil",
+        "python": 67,
+        "mathematics": 73,
+        "devops": 69,
+    },
+    "103": {
+        "name": "Kabir Joshi",
+        "python": 28,
+        "mathematics": 45,
+        "devops": 32,
+    },
 }
 
 PASS_MARK = 35
 
 
 def calculate_result(student):
-    """Return total, percentage, and pass/fail status for a student's marks."""
-    marks = [student["python"], student["mathematics"], student["devops"]]
+    """Calculate total, percentage, and pass/fail status."""
+    subjects = ["python", "mathematics", "devops"]
+    marks = [student[subject] for subject in subjects]
+
     total = sum(marks)
     percentage = round(total / len(marks), 2)
-    status = "PASS" if all(mark >= PASS_MARK for mark in marks) else "FAIL"
+
+    status = (
+        "PASS"
+        if all(mark >= PASS_MARK for mark in marks)
+        else "FAIL"
+    )
 
     return {
         "total": total,
@@ -26,27 +48,31 @@ def calculate_result(student):
     }
 
 
-@app.get("/")
+@app.route("/", methods=["GET"])
 def home():
     return jsonify({
         "application": "Student Result Management System",
         "message": "Use /results/<roll_number> to view a student's result.",
         "sample_roll_numbers": list(STUDENTS.keys()),
-    })
+    }), 200
 
 
-@app.get("/health")
+@app.route("/health", methods=["GET"])
 def health():
     return jsonify({"status": "healthy"}), 200
 
 
-@app.get("/results/<roll_number>")
+@app.route("/results/<roll_number>", methods=["GET"])
 def get_result(roll_number):
     student = STUDENTS.get(roll_number)
+
     if student is None:
-        return jsonify({"error": "Student roll number not found"}), 404
+        return jsonify({
+            "error": "Student roll number not found"
+        }), 404
 
     result = calculate_result(student)
+
     response = {
         "roll_number": roll_number,
         "name": student["name"],
@@ -57,8 +83,13 @@ def get_result(roll_number):
         },
         **result,
     }
+
     return jsonify(response), 200
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    app.run(
+        host="0.0.0.0",
+        port=5000,
+        debug=False,
+    )
