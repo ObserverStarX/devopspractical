@@ -35,11 +35,7 @@ def calculate_result(student):
     total = sum(marks)
     percentage = round(total / len(marks), 2)
 
-    status = (
-        "PASS"
-        if all(mark >= PASS_MARK for mark in marks)
-        else "FAIL"
-    )
+    status = "PASS" if all(mark >= PASS_MARK for mark in marks) else "FAIL"
 
     return {
         "total": total,
@@ -89,6 +85,14 @@ def get_result(roll_number):
 
 if __name__ == "__main__":
     app.run(
+        host="0.0.0.0",
+        port=5000,
+        debug=False,
+    )
+
+
+
+    
         host="0.0.0.0",
         port=5000,
         debug=False,
